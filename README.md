@@ -1,8 +1,3 @@
-Igen. Az előző változatban a Markdown formázás nem volt megfelelő. Itt egy **GitHub-kompatibilis, tiszta `README.md`**, valódi Markdown struktúrával.
-
-Ezt **teljes egészében** másold a `README.md` fájlba:
-
-````markdown
 # Azure Data Migration – Pytest
 
 A Python-based QA project for validating customer data migration into Azure Blob Storage.

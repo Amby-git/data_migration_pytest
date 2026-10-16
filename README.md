@@ -57,6 +57,8 @@ The project also includes deliberate defect injection to demonstrate that automa
 data_migration_pytest/
 │
 ├── data/
+│   ├── fixtures/
+│   │   └── negative/              # Isolated negative-scenario CSV fixtures
 │   ├── source/
 │   │   └── customers_source.csv
 │   │
@@ -65,13 +67,26 @@ data_migration_pytest/
 │
 ├── src/
 │   ├── azure_storage.py
-│   └── etl.py
+│   ├── etl.py
+│   └── reconciliation.py          # Reusable logged reconciliation checks
 │
 ├── tests/
 │   ├── test_etl.py
 │   ├── test_azure_storage.py
 │   ├── test_azure_reconciliation.py
-│   └── test_defect_detection.py
+│   ├── test_defect_detection.py
+│   ├── test_negative_reconciliation.py
+│   ├── bdd/
+│       └── test_reconciliation_steps.py
+│   └── features/
+│       ├── clean_migration.feature
+│       ├── customer_attribute_reconciliation.feature
+│       ├── customer_reconciliation.feature
+│       ├── financial_data_quality.feature
+│       ├── mandatory_fields.feature
+│       ├── negative_reconciliation.feature
+│       ├── source_data_quality.feature
+│       └── target_transformation.feature
 │
 ├── .gitignore
 └── README.md
@@ -235,38 +250,49 @@ The test suite compares these values automatically.
 
 ---
 
-## Example Defect Detection
+## Negative Scenario Fixtures and Logging
 
-The project deliberately demonstrates a financial data migration defect.
+The main Azure source and target blobs contain valid migration data. Deliberately
+invalid CSV fixtures live under data/fixtures/negative so defect tests remain
+repeatable and never corrupt Azure test data.
 
-For customer `1004`, the source contains:
+The logged validator detects:
 
-```text
-2100
-```
+* Amount mismatches
+* Missing or unexpected target customers
+* Duplicate target customer IDs
+* Invalid country-to-region mappings
+* Null mandatory target fields
 
-The target is deliberately changed to:
+Every detected defect is logged with a stable code, for example:
 
-```text
-9999
-```
+    ERROR src.reconciliation AMOUNT_MISMATCH: Amount differs for customer IDs: [2002]
 
-The reconciliation test detects the mismatch:
+Run the negative tests with log output enabled:
 
-```text
-customer_id  amount  amount_eur
-1004         2100    9999
-```
+    .venv/bin/python -m pytest tests/test_negative_reconciliation.py -v --log-cli-level=ERROR
 
-The expected test result is:
+Each negative test passes only when it detects and logs its expected defect.
 
-```text
-FAILED
-```
+---
 
-This is intentional.
+## BDD with Cucumber-Style Gherkin
 
-It demonstrates that the automated QA framework can identify a specific record-level data integrity defect rather than simply reporting that a migration failed.
+The project uses pytest-bdd, which runs Gherkin feature files through pytest.
+Feature files in tests/features describe business-readable scenarios; reusable Python
+steps in tests/bdd/test_reconciliation_steps.py load CSV data, call the shared
+validator, and assert the detected log events.
+
+The reusable steps cover data population, key uniqueness, null checks, schema
+renaming, amount reconciliation, name reconciliation, source-to-target
+presence, and country-to-region mappings.
+
+Run all BDD scenarios:
+
+    .venv/bin/python -m pytest tests/bdd -v --log-cli-level=ERROR
+
+The feature scenarios use only local fixtures and local CSVs. They do not
+modify Azure Blob Storage.
 
 ---
 
@@ -327,11 +353,7 @@ The project has successfully demonstrated:
 * Source-to-target reconciliation
 * Financial data reconciliation
 * Record-level defect detection
-* Intentional migration defect injection
-
-The intentionally injected defect is expected to make the relevant reconciliation test fail.
-
-After investigation, the target data can be restored and the complete suite should return to green.
+* Isolated negative-fixture validation with structured log output
 
 ---
 

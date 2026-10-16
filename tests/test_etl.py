@@ -1,17 +1,20 @@
 import pandas as pd
+from pathlib import Path
 
 from src.etl import transform_customers
 
 
+SOURCE_FILE = Path(__file__).resolve().parent.parent / "data" / "source" / "customers_source.csv"
+
 def test_source_and_target_record_count_match():
-    source = pd.read_csv("data/source/customers_source.csv")
+    source = pd.read_csv(SOURCE_FILE)
     target = transform_customers()
 
     assert len(source) == len(target)
 
 
 def test_customer_ids_are_preserved():
-    source = pd.read_csv("data/source/customers_source.csv")
+    source = pd.read_csv(SOURCE_FILE)
     target = transform_customers()
 
     assert source["customer_id"].tolist() == target["customer_id"].tolist()

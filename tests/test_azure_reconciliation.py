@@ -16,6 +16,17 @@ def test_source_and_target_record_counts_match():
     assert len(source) == len(target)
 
 
+def test_migration_contains_the_expected_customer_population():
+    """Validate the expected dataset scale and primary-key population."""
+    source = download_source_as_dataframe()
+    target = download_target_as_dataframe()
+
+    expected_customer_ids = set(range(1001, 1101))
+
+    assert set(source["customer_id"]) == expected_customer_ids
+    assert set(target["customer_id"]) == expected_customer_ids
+
+
 def test_all_source_customer_ids_exist_in_target():
     """
     Validate that every source customer exists in the target.

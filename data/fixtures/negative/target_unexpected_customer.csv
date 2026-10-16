@@ -1,0 +1,4 @@
+customer_id,customer_name,country,amount_eur,country_region
+2001,Alice Murphy,IE,100,EU
+2002,Ben Carter,UK,200,UK
+2004,Dana Rossi,FR,400,EU
